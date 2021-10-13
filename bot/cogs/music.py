@@ -10,7 +10,7 @@ class music(commands.Cog):
         self.bot = bot
 
         self.is_playing = False
-        self.vc = ""
+        # self.vc = ""
         self.music_queue = {}
         self.FFMPEG_OPTIONS = {
             "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -28,13 +28,12 @@ class music(commands.Cog):
 
             return info
 
-    async def play_next(self, ctx, item):
+    def play_next(self, ctx):
         if len(self.music_queue[ctx.guild.id]) > 0:
             self.is_playing = True
 
-            self.music_queue[ctx.guild.id].pop(0)
-
             s_url = self.music_queue[ctx.guild.id][0]["formats"][0]["url"]
+            self.music_queue[ctx.guild.id].pop(0)
 
             self.vc.play(
                 discord.FFmpegPCMAudio(s_url, **self.FFMPEG_OPTIONS),
@@ -44,23 +43,16 @@ class music(commands.Cog):
         else:
             self.is_playing = False
 
-    async def play_music(self, ctx, item):
+    def play_music(self, ctx, song):
         if len(self.music_queue[ctx.guild.id]) > 0:
             self.is_playing = True
-
             s_url = self.music_queue[ctx.guild.id][0]["formats"][0]["url"]
-            # print(s_url)
 
-            if self.vc == "" or not self.vc.is_connected():
-                # print(self.music_queue[ctx.guild.id][0])
-                self.vc = await ctx.author.voice.channel.connect()
-
+            source = discord.FFmpegPCMAudio(s_url, **self.FFMPEG_OPTIONS)
             self.music_queue[ctx.guild.id].pop(0)
 
-            self.vc.play(
-                discord.FFmpegPCMAudio(s_url, **self.FFMPEG_OPTIONS),
-                after=lambda e: self.play_next(),
-            )
+            self.vc = ctx.message.guild.voice_client
+            self.vc.play(source, after=lambda e: self.play_next(ctx))
 
         else:
             self.is_playing = False
@@ -90,6 +82,7 @@ class music(commands.Cog):
             if not song:
                 await ctx.send("could not download the song")
             else:
+
                 if not ctx.guild.id in self.music_queue:
                     self.music_queue[ctx.guild.id] = []
 
@@ -109,10 +102,14 @@ class music(commands.Cog):
                 self.music_queue[ctx.guild.id].append(song)
                 await ctx.send(embed=embed)
 
-                await self.play_music(ctx, song)
+                # try:
+                #     self.play_music(ctx, song)
+                # except:
+                await voice_channel.connect()
+                self.play_music(ctx, song)
 
                 if self.is_playing == False:
-                    await self.play_music()
+                    self.play_music(ctx, song)
 
     @commands.command(aliases=["q"])
     async def queue(self, ctx):
@@ -120,7 +117,7 @@ class music(commands.Cog):
         if not len(self.music_queue[ctx.guild.id]):
             await ctx.send("queue is empty")
             return
-        for i in range(0, len(self.music_queue)):
+        for i in range(len(self.music_queue[ctx.guild.id])):
             queue_ += f"{i+1}" + "." + self.music_queue[ctx.guild.id][i]["title"] + "\n"
         if queue_ != "":
             await ctx.send(queue_)
@@ -134,8 +131,8 @@ class music(commands.Cog):
     @commands.command(name="r")
     async def remove(self, ctx, index: int):
         if 1 <= index <= len(self.music_queue[ctx.guild.id]):
-            self.music_queue.pop(index - 1)
-            ctx.send("song removed")
+            self.music_queue[ctx.guild.id].pop(index - 1)
+            await ctx.send(f"song {index} removed")
             await self.play_music(ctx)
 
     @commands.command(name="l")
@@ -144,6 +141,10 @@ class music(commands.Cog):
             return await ctx.voice_client.disconnect()
 
         await ctx.send("I am not connected to a voice channel.")
+
+    @commands.command(aliases=["np"])
+    async def now_playing(self, ctx):
+        pass
 
 
 def setup(bot):

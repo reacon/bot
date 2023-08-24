@@ -7,7 +7,7 @@ import random
 from discord.ext import commands
 
 prefix = "-"
-bot = commands.Bot(command_prefix=prefix)
+bot = commands.Bot(command_prefix=prefix, intents=discord.Intents.all())
 
 
 @bot.command()
@@ -41,6 +41,8 @@ async def ping(ctx):
     )
     await ctx.send(embed=embed)
 
+    
+
 
 @bot.command()  # Description command
 async def desc(ctx, *, random_stuff=None):
@@ -72,4 +74,4 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-bot.run("ODg5MDMwOTc3Nzg2MTE0MDQ4.YUbUng.6jbuKlr9t9rQySkW4md5pJ3Tw8k")  # our token
+bot.run("ODg5MDMwOTc3Nzg2MTE0MDQ4.G_6Pl8.fNIbovduD0Xt5agBi3th8nBlptEpFS-w0vjZzw")  # our token
